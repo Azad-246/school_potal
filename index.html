@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — School Management</title>
+<style>
+  :root{
+    --primary:#2563eb;--primary-dark:#1e40af;--primary-light:#dbeafe;
+    --text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--danger:#dc2626;--success:#16a34a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 60%,#3b82f6 100%);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;color:var(--text);position:relative;overflow-x:hidden;
+  }
+  body::before,body::after{content:"";position:fixed;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;}
+  body::before{width:500px;height:500px;top:-200px;right:-150px;}
+  body::after{width:400px;height:400px;bottom:-180px;left:-120px;}
+
+  .login-card{
+    position:relative;z-index:1;background:#fff;
+    padding:36px 32px;border-radius:18px;width:100%;max-width:420px;
+    box-shadow:0 25px 60px rgba(0,0,0,0.3);
+    animation:cardIn 0.4s ease-out;
+  }
+  @keyframes cardIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+
+  .logo{
+    width:56px;height:56px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    border-radius:14px;display:flex;align-items:center;justify-content:center;
+    font-size:28px;margin-bottom:16px;box-shadow:0 8px 20px rgba(37,99,235,0.35);
+  }
+  h1{font-size:22px;font-weight:700;margin-bottom:6px;color:#111827;}
+  .subtitle{font-size:13px;color:var(--muted);margin-bottom:24px;}
+
+  .role-tabs{display:flex;gap:6px;margin-bottom:20px;background:#f3f4f6;padding:5px;border-radius:10px;}
+  .role-tab{
+    flex:1;padding:10px 6px;border:none;background:transparent;border-radius:7px;
+    cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);
+    display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;
+  }
+  .role-tab .ico{font-size:16px;}
+  .role-tab:hover:not(.active){color:#374151;}
+  .role-tab.active{background:#fff;color:var(--primary);box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;}
+  .field input{
+    width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;
+    font-size:14px;background:#fff;transition:border-color 0.15s,box-shadow 0.15s;
+  }
+  .field input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light);}
+  .field input::placeholder{color:#9ca3af;}
+
+  .err{
+    min-height:18px;font-size:12.5px;color:var(--danger);
+    margin-bottom:10px;font-weight:500;opacity:0;transition:opacity 0.2s;
+  }
+  .err.show{opacity:1;}
+
+  .btn-login{
+    width:100%;padding:13px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:#fff;border:none;border-radius:10px;
+    font-size:14.5px;font-weight:700;cursor:pointer;
+    box-shadow:0 6px 16px rgba(37,99,235,0.35);
+    display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;
+    transition:transform 0.1s,box-shadow 0.15s,opacity 0.15s;
+  }
+  .btn-login:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 20px rgba(37,99,235,0.45);}
+  .btn-login:disabled{opacity:0.7;cursor:not-allowed;}
+
+  .spinner{
+    width:16px;height:16px;border:2.5px solid rgba(255,255,255,0.4);
+    border-top-color:#fff;border-radius:50%;
+    animation:spin 0.7s linear infinite;display:none;
+  }
+  .btn-login.loading .spinner{display:inline-block;}
+  .btn-login.loading .btn-text{display:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  #dbStatus{
+    margin-top:18px;padding:10px 14px;border-radius:8px;
+    font-size:12px;text-align:center;line-height:1.5;
+    background:#f9fafb;color:var(--muted);border:1px solid var(--border);
+  }
+  #dbStatus.ok{background:#f0fdf4;color:#166534;border-color:#bbf7d0;}
+  #dbStatus.warn{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
+  #dbStatus b{font-weight:700;}
+  #dbStatus code{background:rgba(0,0,0,0.08);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11px;}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="logo">🏫</div>
+  <h1>School Management</h1>
+  <p class="subtitle">Sign in to continue</p>
+
+  <div class="role-tabs">
+    <button type="button" class="role-tab active" data-role="principal">
+      <span class="ico">👑</span><span>Principal</span>
+    </button>
+    <button type="button" class="role-tab" data-role="teacher">
+      <span class="ico">👨‍🏫</span><span>Teacher</span>
+    </button>
+    <button type="button" class="role-tab" data-role="student">
+      <span class="ico">🎓</span><span>Student</span>
+    </button>
+  </div>
+
+  <form id="loginForm" novalidate>
+    <div class="field">
+      <label for="loginId">Username</label>
+      <input id="loginId" type="text" placeholder="Enter your username" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="loginPass">Password</label>
+      <input id="loginPass" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+    </div>
+    <div class="err" id="loginErr"></div>
+    <button type="submit" class="btn-login" id="loginBtn">
+      <span class="btn-text">Sign In</span>
+      <span class="spinner" aria-hidden="true"></span>
+    </button>
+  </form>
+
+  <div id="dbStatus">Connecting to database…</div>
+</div>
+
+<script type="module">
+/* ============================================================
+   LOGIN MODULE — Firebase (Firestore) connected
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, query, where } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+/* ----- Firebase config (एक ही जगह) ----- */
+const firebaseConfig = {
+  apiKey: "AIzaSyBAL2TNi_HTd2wA94JuEhx-fUCjVVXjxDk",
+  authDomain: "school-72bbf.firebaseapp.com",
+  projectId: "school-72bbf",
+  storageBucket: "school-72bbf.firebasestorage.app",
+  messagingSenderId: "1010824866684",
+  appId: "1:1010824866684:web:55b60cb0f1240f2bf592f9",
+  measurementId: "G-XZCY7VJ2ND"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ============================================================
+   ONE-TIME BASE CONFIG SEED
+   (सिर्फ classes, sections, subjects, fee structure, settings)
+   users / students / teachers आप Firestore में खुद डालेंगे
+   ============================================================ */
+async function seedBaseConfig() {
+  try {
+    const meta = await getDoc(doc(db, 'meta', 'seeded'));
+    if(meta.exists()) return;
+
+    await setDoc(doc(db, 'settings', 'main'), {
+      schoolName: 'Demo Public School',
+      address: 'New Delhi, India',
+      academicYear: '2025-26'
+    }, { merge: true });
+
+    const classes = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+    const subjects = {};
+    classes.forEach(c => subjects[c] = ['Math','English','Science','Hindi','PE','Art']);
+
+    await setDoc(doc(db, 'config', 'main'), {
+      classes,
+      sections: ['A','B'],
+      subjects
+    }, { merge: true });
+
+    for(const c of classes) {
+      const fs = await getDoc(doc(db, 'feeStructure', c));
+      if(!fs.exists()) {
+        await setDoc(doc(db, 'feeStructure', c), {
+          Tuition: 5000,
+          Transport: 1000,
+          Exam: 500
+        });
+      }
+    }
+
+    await setDoc(doc(db, 'meta', 'seeded'), { at: Date.now() });
+    console.log('[Seed] Base config created');
+  } catch(e) {
+    console.warn('[Seed] Failed:', e);
+  }
+}
+
+/* ============================================================
+   USER LOOKUP (Firestore 'users' collection)
+   Expected doc structure:
+   {
+     username: "principal",
+     password: "admin123",
+     role: "principal" | "teacher" | "student",
+     name: "Full Name",
+     linkedId: "S001" | "T1" | ""   (optional)
+   }
+   ============================================================ */
+async function findUser(username, password) {
+  const q = query(
+    collection(db, 'users'),
+    where('username', '==', username),
+    where('password', '==', password)
+  );
+  const snap = await getDocs(q);
+  if(snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, ...d.data() };
+}
+
+/* ============================================================
+   CONNECTION CHECK + STATUS
+   ============================================================ */
+const dbStatusEl = document.getElementById('dbStatus');
+
+async function updateDbStatus() {
+  try {
+    const s = await getDocs(collection(db, 'users'));
+    if(s.size === 0) {
+      dbStatusEl.className = 'warn';
+      dbStatusEl.innerHTML = `⚠️ <b>No users yet.</b><br>
+        Open <b>Firebase Console → Firestore → users</b> and add your first user
+        <br><code>{username, password, role, name, linkedId}</code>`;
+    } else {
+      dbStatusEl.className = 'ok';
+      dbStatusEl.innerHTML = `✓ Connected to database · ${s.size} user${s.size === 1 ? '' : 's'} registered`;
+    }
+  } catch(e) {
+    console.warn(e);
+    dbStatusEl.className = 'warn';
+    dbStatusEl.innerHTML = `❌ Cannot reach Firestore.<br>
+      Check <b>Firebase Console → Firestore → Rules</b> (allow read, write: if true;).`;
+  }
+}
+
+/* ============================================================
+   UI WIRING
+   ============================================================ */
+let selectedRole = 'principal';
+
+document.querySelectorAll('.role-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.role-tab').forEach(x => {
+      x.classList.remove('active');
+      x.setAttribute('aria-selected', 'false');
+    });
+    t.classList.add('active');
+    t.setAttribute('aria-selected', 'true');
+    selectedRole = t.dataset.role;
+    document.getElementById('loginErr').classList.remove('show');
+  });
+});
+
+const loginErrEl = document.getElementById('loginErr');
+const loginBtn = document.getElementById('loginBtn');
+
+function showError(msg) {
+  loginErrEl.textContent = msg;
+  loginErrEl.classList.add('show');
+}
+function setLoading(on) {
+  loginBtn.disabled = on;
+  loginBtn.classList.toggle('loading', on);
+}
+
+/* ============================================================
+   FORM SUBMIT
+   ============================================================ */
+const seedPromise = seedBaseConfig();
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  loginErrEl.classList.remove('show');
+
+  const username = document.getElementById('loginId').value.trim().toLowerCase();
+  const password = document.getElementById('loginPass').value;
+
+  if(!username) { showError('Please enter your username.'); return; }
+  if(!password) { showError('Please enter your password.'); return; }
+
+  setLoading(true);
+  try {
+    await seedPromise; // ensure base config is seeded
+    const user = await findUser(username, password);
+
+    if(!user) {
+      showError('Invalid username or password.');
+      setLoading(false);
+      return;
+    }
+
+    if(user.role !== selectedRole) {
+      showError(`This is a ${user.role} account. Please select the "${user.role}" tab.`);
+      setLoading(false);
+      return;
+    }
+
+    localStorage.setItem('sms_session', JSON.stringify({
+      uid: user.id,
+      role: user.role,
+      name: user.name || user.username,
+      linkedId: user.linkedId || '',
+      username: user.username,
+      savedAt: Date.now()
+    }));
+
+    setTimeout(() => {
+      window.location.href = user.role + '.html';
+    }, 200);
+
+  } catch(err) {
+    console.error('[Login]', err);
+    showError('Login failed. Check internet or Firestore rules.');
+    setLoading(false);
+  }
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(function boot() {
+  // Already logged in?
+  try {
+    const existing = localStorage.getItem('sms_session');
+    if(existing) {
+      const s = JSON.parse(existing);
+      if(s.role && s.savedAt && Date.now() - s.savedAt < 8 * 60 * 60 * 1000) {
+        window.location.replace(s.role + '.html');
+        return;
+      } else {
+        localStorage.removeItem('sms_session');
+      }
+    }
+  } catch(e) { localStorage.removeItem('sms_session'); }
+
+  document.getElementById('loginId').focus();
+  seedPromise.then(updateDbStatus);
+})();
+</script>
+
+</body>
+</html>

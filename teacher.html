@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher — School Management</title>
+<style>
+  :root{--primary:#0891b2;--primary-dark:#0e7490;--primary-light:#cffafe;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--danger:#dc2626;--success:#16a34a;--warning:#f59e0b;--bg:#f4f6fa;--card:#fff;--sidebar:#164e63;--sidebar-hover:#1e6a85;}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  body{background:var(--bg);color:var(--text);}
+  .app{display:flex;min-height:100vh;}
+  .sidebar{width:240px;background:var(--sidebar);color:#fff;display:flex;flex-direction:column;flex-shrink:0;padding:16px;}
+  .sidebar-header{margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .sidebar-header .brand{font-size:20px;font-weight:700;}
+  .sidebar-header .school-name{font-size:11px;color:#94a3b8;margin-top:4px;}
+  .sidebar nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;}
+  .nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;color:#cbd5e1;text-align:left;border-radius:7px;cursor:pointer;font-size:13.5px;font-weight:500;}
+  .nav-btn:hover{background:var(--sidebar-hover);color:#fff;}
+  .nav-btn.active{background:var(--primary);color:#fff;}
+  .nav-btn .ico{font-size:16px;}
+  .sidebar-footer{padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);margin-top:14px;}
+  .user-info{font-size:13px;margin-bottom:10px;}
+  .user-info .name{font-weight:600;}
+  .user-info .role{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;}
+  .btn-logout{width:100%;padding:8px;background:rgba(220,38,38,0.9);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+  .btn-logout:hover{background:var(--danger);}
+  .main{flex:1;padding:24px 28px;overflow-x:auto;}
+  .page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+  .page-head h1{font-size:22px;font-weight:700;}
+  .page-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+  .card-label{font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .card-value{font-size:26px;font-weight:700;}
+  .btn{padding:9px 16px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);}
+  .btn:hover{background:#f9fafb;}
+  .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-dark);}
+  .btn.danger{background:var(--danger);color:#fff;border-color:var(--danger);}
+  .btn.success{background:var(--success);color:#fff;border-color:var(--success);}
+  .btn.sm{padding:5px 10px;font-size:12px;}
+  .toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;}
+  .table-wrap{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--border);}
+  th{background:#f9fafb;font-weight:600;font-size:12px;color:#374151;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#f9fafb;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;}
+  .field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:inherit;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light);}
+  .field textarea{resize:vertical;min-height:80px;}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  .modal{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;}
+  .modal h2{font-size:18px;margin-bottom:18px;font-weight:700;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+  .toast{position:fixed;bottom:24px;right:24px;background:#1f2937;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:2000;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+  .badge.green{background:#dcfce7;color:#166534;}
+  .badge.red{background:#fee2e2;color:#991b1b;}
+  .badge.blue{background:#dbeafe;color:#1e40af;}
+  .badge.gray{background:#e5e7eb;color:#374151;}
+  .badge.yellow{background:#fef3c7;color:#92400e;}
+  .empty{padding:40px 20px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px;}
+  .loading{padding:40px 20px;text-align:center;color:var(--muted);}
+  .att-toggle{display:inline-flex;gap:4px;background:#f3f4f6;padding:3px;border-radius:8px;}
+  .att-toggle input{display:none;}
+  .att-toggle label{padding:6px 14px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;color:var(--muted);}
+  .att-toggle input[value="P"]:checked + label{background:var(--success);color:#fff;}
+  .att-toggle input[value="A"]:checked + label{background:var(--danger);color:#fff;}
+  code{background:#f3f4f6;padding:1px 6px;border-radius:4px;font-family:"Courier New",monospace;}
+  @media (max-width:768px){.app{flex-direction:column;}.sidebar{width:100%;flex-direction:row;padding:10px;overflow-x:auto;gap:6px;align-items:center;}.sidebar-header,.sidebar-footer{display:none;}.sidebar nav{flex-direction:row;gap:4px;overflow-x:auto;flex:1;}.nav-btn{padding:8px 12px;white-space:nowrap;font-size:12px;}.main{padding:16px;}.page-head h1{font-size:18px;}.cards{grid-template-columns:repeat(2,1fr);gap:10px;}.card-value{font-size:20px;}}
+  @media print{.sidebar,.nav-btn,.page-actions,.toolbar,.btn,.att-toggle{display:none!important;}.main{padding:0;}.app{display:block;}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+/* ============================================================
+   MODULE 3 — TEACHER (Firestore-connected)
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBAL2TNi_HTd2wA94JuEhx-fUCjVVXjxDk",
+  authDomain: "school-72bbf.firebaseapp.com",
+  projectId: "school-72bbf",
+  storageBucket: "school-72bbf.firebasestorage.app",
+  messagingSenderId: "1010824866684",
+  appId: "1:1010824866684:web:55b60cb0f1240f2bf592f9",
+  measurementId: "G-XZCY7VJ2ND"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ---------- SESSION GUARD ---------- */
+const SESSION_KEY = 'sms_session';
+let SESSION = null;
+try { SESSION = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e){}
+if(!SESSION || SESSION.role !== 'teacher' || Date.now() - (SESSION.savedAt || 0) > 8*60*60*1000){
+  localStorage.removeItem(SESSION_KEY);
+  window.location.replace('login.html');
+  throw new Error('Unauthorized');
+}
+
+/* ---------- HELPERS ---------- */
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+const PERIODS = 6;
+const todayStr = () => new Date().toISOString().slice(0,10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const el=document.createElement('div');el.className='toast';el.textContent=m;document.body.appendChild(el);setTimeout(()=>el.remove(),2400);}
+function openModal(html){const w=document.createElement('div');w.className='modal-bg';w.innerHTML=`<div class="modal">${html}</div>`;w.onclick=e=>{if(e.target===w)w.remove();};document.body.appendChild(w);return w;}
+function closeModal(){document.querySelector('.modal-bg')?.remove();}
+function logout(){localStorage.removeItem(SESSION_KEY);window.location.href='login.html';}
+const loading = t => `<div class="loading">⏳ ${t||'Loading'}…</div>`;
+
+/* ---------- DATA CACHE ---------- */
+const DB = {
+  settings:{}, config:{classes:[],sections:[],subjects:{}},
+  me:null, students:[], exams:[], marks:[], attendance:[],
+  homework:[], notices:[], timetable:{}
+};
+
+async function loadAllData(){
+  const [setSnap, cfgSnap, usersSnap] = await Promise.all([
+    getDoc(doc(db,'settings','main')),
+    getDoc(doc(db,'config','main')),
+    getDocs(collection(db,'users'))
+  ]);
+  DB.settings = setSnap.exists() ? setSnap.data() : {};
+  DB.config = cfgSnap.exists() ? cfgSnap.data() : {classes:[],sections:[],subjects:{}};
+
+  // Find my teacher record via session linkedId
+  const linkedId = SESSION.linkedId;
+  const users = usersSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  const myUser = users.find(u => u.username === SESSION.username && u.role === 'teacher');
+  const teacherId = linkedId || myUser?.linkedId || '';
+  if(teacherId){
+    const tSnap = await getDoc(doc(db,'teachers',teacherId));
+    DB.me = tSnap.exists() ? {id: tSnap.id, ...tSnap.data()} : null;
+  }
+
+  const [stuSnap, exSnap, mkSnap, atSnap, hwSnap, ntSnap, ttSnap] = await Promise.all([
+    getDocs(collection(db,'students')),
+    getDocs(collection(db,'exams')),
+    getDocs(collection(db,'marks')),
+    getDocs(collection(db,'attendance')),
+    getDocs(collection(db,'homework')),
+    getDocs(collection(db,'notices')),
+    getDocs(collection(db,'timetable'))
+  ]);
+  DB.students = stuSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.exams = exSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.marks = mkSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.attendance = atSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.homework = hwSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.notices = ntSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.timetable = {}; ttSnap.docs.forEach(d => DB.timetable[d.id] = d.data());
+}
+
+/* ---------- APP SHELL ---------- */
+let currentPage = 'dashboard';
+const NAV = [
+  ['dashboard','📊','Dashboard'],['attendance','✅','Mark Attendance'],['marks','📝','Marks Entry'],
+  ['timetable','🗓️','My Timetable'],['homework','📚','Homework'],['students','🎓','My Students'],
+  ['notices','📢','Notices'],['profile','👤','My Profile']
+];
+
+function renderShell(){
+  const name = DB.me?.name || SESSION.name || 'Teacher';
+  document.getElementById('app').innerHTML = `
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand">🏫 SMS</div>
+          <div class="school-name">${esc(DB.settings.schoolName || 'School')}</div>
+        </div>
+        <nav>${NAV.map(([id,ico,label]) => `<button class="nav-btn ${currentPage===id?'active':''}" data-page="${id}"><span class="ico">${ico}</span><span>${label}</span></button>`).join('')}</nav>
+        <div class="sidebar-footer">
+          <div class="user-info"><div class="name">${esc(name)}</div><div class="role">Teacher</div></div>
+          <button class="btn-logout" onclick="window.__logout()">Sign Out</button>
+        </div>
+      </aside>
+      <main class="main" id="main"></main>
+    </div>`;
+  document.querySelectorAll('.nav-btn').forEach(b => b.onclick = () => { currentPage = b.dataset.page; renderPage(); });
+}
+window.__logout = logout;
+window.__closeModal = closeModal;
+
+async function renderPage(){
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === currentPage));
+  const main = document.getElementById('main');
+  main.innerHTML = loading();
+  try { await views[currentPage](main); }
+  catch(e){ console.error(e); main.innerHTML = `<div class="empty">Error: ${esc(e.message)}</div>`; }
+}
+
+/* ---------- VIEWS ---------- */
+const views = {};
+
+/* DASHBOARD */
+views.dashboard = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Teacher record not found. Contact Principal.</div>'; return; }
+  const myClasses = me.classes || [];
+  const myStudents = DB.students.filter(s => myClasses.includes(s.class));
+  const today = todayStr();
+  const todayAtt = DB.attendance.filter(a => a.date === today && myClasses.includes(a.class));
+  let present = 0, total = 0;
+  todayAtt.forEach(a => Object.values(a.records||{}).forEach(r => { total++; if(r==='P') present++; }));
+  const attPct = total ? Math.round(present/total*100) : 0;
+  const myMarks = DB.marks.filter(m => m.subject === me.subject).length;
+  const myHW = DB.homework.filter(h => h.teacherId === me.id).length;
+  const myNotices = DB.notices.filter(n => n.audience==='all' || n.audience==='teacher');
+
+  main.innerHTML = `
+    <div class="page-head"><h1>Welcome, ${esc(me.name)}</h1></div>
+    <div class="cards">
+      <div class="card"><div class="card-label">My Subject</div><div class="card-value" style="font-size:18px">${esc(me.subject)}</div></div>
+      <div class="card"><div class="card-label">My Classes</div><div class="card-value" style="font-size:18px">${myClasses.join(', ')||'-'}</div></div>
+      <div class="card"><div class="card-label">My Students</div><div class="card-value">${myStudents.length}</div></div>
+      <div class="card"><div class="card-label">Today Attendance</div><div class="card-value">${total?attPct+'%':'—'}</div></div>
+      <div class="card"><div class="card-label">Marks Entered</div><div class="card-value">${myMarks}</div></div>
+      <div class="card"><div class="card-label">Homework Posted</div><div class="card-value">${myHW}</div></div>
+    </div>
+    <h2 style="font-size:16px;margin-bottom:12px">Quick Actions</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px">
+      <button class="btn primary" onclick="window.__go('attendance')">✅ Mark Attendance</button>
+      <button class="btn primary" onclick="window.__go('marks')">📝 Enter Marks</button>
+      <button class="btn primary" onclick="window.__go('homework')">📚 Post Homework</button>
+    </div>
+    <h2 style="font-size:16px;margin-bottom:12px">Recent Notices</h2>
+    ${myNotices.slice(-3).reverse().map(n => `
+      <div class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b>${esc(n.title)}</b><span class="badge ${n.audience==='all'?'blue':'yellow'}">${n.audience}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">${n.date}</div>
+        <div style="font-size:13px">${esc(n.body)}</div>
+      </div>
+    `).join('') || '<div class="empty">No notices</div>'}`;
+};
+window.__go = (p) => { currentPage = p; renderPage(); };
+
+/* MARK ATTENDANCE */
+views.attendance = async (main) => {
+  const me = DB.me; if(!me){ main.innerHTML = '<div class="empty">No teacher record</div>'; return; }
+  const myClasses = me.classes || [];
+  if(!myClasses.length){ main.innerHTML = '<div class="empty">No classes assigned.</div>'; return; }
+  main.innerHTML = `
+    <div class="page-head"><h1>Mark Attendance</h1></div>
+    <div class="toolbar">
+      <select id="attClass">${myClasses.map(c => `<option value="${c}">Class ${c}</option>`).join('')}</select>
+      <select id="attSection">${(DB.config.sections||['A','B']).map(s => `<option value="${s}">Section ${s}</option>`).join('')}</select>
+      <input type="date" id="attDate" value="${todayStr()}" max="${todayStr()}">
+      <button class="btn primary" onclick="window.__loadAttGrid()">Load</button>
+      <button class="btn" onclick="window.__allPresent()">All Present</button>
+    </div>
+    <div id="attArea"></div>`;
+  setTimeout(() => loadAttGrid(), 50);
+};
+
+async function loadAttGrid(){
+  const cls = document.getElementById('attClass')?.value;
+  const sec = document.getElementById('attSection')?.value;
+  const date = document.getElementById('attDate')?.value;
+  const area = document.getElementById('attArea'); if(!area) return;
+
+  const students = DB.students.filter(s => s.class===cls && s.section===sec);
+  if(!students.length){ area.innerHTML = `<div class="empty">No students in Class ${cls}-${sec}.</div>`; return; }
+
+  // Fetch existing
+  const q = query(collection(db,'attendance'), where('date','==',date), where('class','==',cls), where('section','==',sec));
+  const snap = await getDocs(q);
+  const existing = snap.empty ? null : {id: snap.docs[0].id, ...snap.docs[0].data()};
+  const records = existing?.records || {};
+
+  area.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div><b>Class ${cls}-${sec}</b> · ${students.length} students · ${date}
+        ${existing ? '<span class="badge green" style="margin-left:8px">Marked</span>' : '<span class="badge yellow" style="margin-left:8px">Not marked</span>'}
+      </div>
+      <div id="attCount" style="font-size:13px;color:var(--muted)"></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead>
+      <tbody>${students.map(s => {
+        const cur = records[s.id] || 'P';
+        return `<tr><td>${esc(s.roll||'-')}</td><td>${esc(s.name)}</td>
+          <td><div class="att-toggle">
+            <input type="radio" name="att_${s.id}" id="p_${s.id}" value="P" ${cur==='P'?'checked':''} onchange="window.__updateAttCount()">
+            <label for="p_${s.id}">Present</label>
+            <input type="radio" name="att_${s.id}" id="a_${s.id}" value="A" ${cur==='A'?'checked':''} onchange="window.__updateAttCount()">
+            <label for="a_${s.id}">Absent</label>
+          </div></td></tr>`;
+      }).join('')}</tbody>
+    </table></div>
+    <div style="margin-top:14px"><button class="btn primary" onclick="window.__saveAtt('${cls}','${sec}','${date}')">💾 Save Attendance</button></div>`;
+  updateAttCount();
+}
+window.__loadAttGrid = loadAttGrid;
+
+function updateAttCount(){
+  const area = document.getElementById('attArea'); if(!area) return;
+  const total = area.querySelectorAll('input[type="radio"][value="P"]').length;
+  const present = area.querySelectorAll('input[type="radio"][value="P"]:checked').length;
+  const el = document.getElementById('attCount');
+  if(el) el.innerHTML = `<b style="color:var(--success)">${present}</b> present · <b style="color:var(--danger)">${total-present}</b> absent`;
+}
+window.__updateAttCount = updateAttCount;
+
+window.__allPresent = () => {
+  const area = document.getElementById('attArea'); if(!area) return;
+  area.querySelectorAll('input[type="radio"][value="P"]').forEach(r => r.checked = true);
+  updateAttCount();
+};
+
+window.__saveAtt = async (cls, sec, date) => {
+  const students = DB.students.filter(s => s.class===cls && s.section===sec);
+  const records = {};
+  students.forEach(s => {
+    const el = document.querySelector(`input[name="att_${s.id}"]:checked`);
+    records[s.id] = el ? el.value : 'P';
+  });
+  try {
+    const q = query(collection(db,'attendance'), where('date','==',date), where('class','==',cls), where('section','==',sec));
+    const snap = await getDocs(q);
+    if(!snap.empty){
+      await updateDoc(doc(db,'attendance',snap.docs[0].id), {records, markedBy: SESSION.username});
+    } else {
+      await addDoc(collection(db,'attendance'), {date, class:cls, section:sec, records, markedBy: SESSION.username});
+    }
+    toast('Attendance saved');
+    await loadAllData(); loadAttGrid();
+  } catch(e){ toast('Error: ' + e.message); }
+};
+
+/* MARKS ENTRY */
+views.marks = async (main) => {
+  const me = DB.me; if(!me){ main.innerHTML = '<div class="empty">No teacher record</div>'; return; }
+  const myClasses = me.classes || [];
+  if(!DB.exams.length){ main.innerHTML = '<div class="page-head"><h1>Marks Entry</h1></div><div class="empty">No exams created yet.</div>'; return; }
+  if(!myClasses.length){ main.innerHTML = '<div class="empty">No classes assigned.</div>'; return; }
+  main.innerHTML = `
+    <div class="page-head"><h1>Marks Entry</h1></div>
+    <div class="toolbar">
+      <select id="mExam">${DB.exams.map(e => `<option value="${e.id}">${esc(e.name)}${e.published?' (published)':''}</option>`).join('')}</select>
+      <select id="mClass">${myClasses.map(c => `<option value="${c}">Class ${c}</option>`).join('')}</select>
+      <select id="mSection">${(DB.config.sections||['A','B']).map(s => `<option value="${s}">Section ${s}</option>`).join('')}</select>
+      <button class="btn primary" onclick="window.__loadMarksGrid()">Load</button>
+    </div>
+    <div id="marksArea"></div>`;
+};
+window.__loadMarksGrid = () => {
+  const examId = document.getElementById('mExam')?.value;
+  const cls = document.getElementById('mClass')?.value;
+  const sec = document.getElementById('mSection')?.value;
+  const me = DB.me;
+  const area = document.getElementById('marksArea'); if(!area || !me) return;
+  const exam = DB.exams.find(e => e.id === examId); if(!exam) return;
+  const students = DB.students.filter(s => s.class===cls && s.section===sec);
+  if(!students.length){ area.innerHTML = `<div class="empty">No students in Class ${cls}-${sec}.</div>`; return; }
+  const published = exam.published;
+  area.innerHTML = `
+    <div style="background:#f0f9ff;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;color:#075985">
+      <b>${esc(exam.name)}</b> · Subject: <b>${esc(me.subject)}</b> · Max: <b>${exam.max}</b>
+      ${published ? '<br><span style="color:#dc2626">⚠️ Published — marks are locked.</span>' : ''}
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Roll</th><th>Name</th><th>Marks (/${exam.max})</th></tr></thead>
+      <tbody>${students.map(s => {
+        const ex = DB.marks.find(m => m.examId===examId && m.studentId===s.id && m.subject===me.subject);
+        return `<tr><td>${esc(s.roll||'-')}</td><td>${esc(s.name)}</td>
+          <td><input type="number" id="mk_${s.id}" min="0" max="${exam.max}" value="${ex?.marks ?? ''}" style="width:100px;padding:6px 8px;border:1.5px solid var(--border);border-radius:6px" ${published?'disabled':''}></td></tr>`;
+      }).join('')}</tbody>
+    </table></div>
+    ${!published ? `<div style="margin-top:14px"><button class="btn primary" onclick="window.__saveMarks('${examId}','${cls}','${sec}')">💾 Save Marks</button></div>` : ''}`;
+};
+
+window.__saveMarks = async (examId, cls, sec) => {
+  const me = DB.me; const exam = DB.exams.find(e => e.id === examId);
+  if(!me || !exam || exam.published){ toast('Cannot save'); return; }
+  const students = DB.students.filter(s => s.class===cls && s.section===sec);
+  let updated = 0, errors = 0;
+  for(const s of students){
+    const input = document.getElementById('mk_' + s.id); if(!input) continue;
+    const raw = input.value.trim(); if(raw === '') continue;
+    const val = parseInt(raw, 10);
+    if(isNaN(val) || val < 0 || val > exam.max){ errors++; continue; }
+    try {
+      const q = query(collection(db,'marks'), where('examId','==',examId), where('studentId','==',s.id), where('subject','==',me.subject));
+      const snap = await getDocs(q);
+      if(!snap.empty) await updateDoc(doc(db,'marks',snap.docs[0].id), {marks: val});
+      else await addDoc(collection(db,'marks'), {examId, studentId: s.id, subject: me.subject, marks: val});
+      updated++;
+    } catch(e){ errors++; }
+  }
+  toast(errors ? `Saved ${updated}, ${errors} failed` : `Saved ${updated} marks`);
+  await loadAllData(); window.__loadMarksGrid();
+};
+
+/* MY TIMETABLE */
+views.timetable = async (main) => {
+  const me = DB.me; if(!me){ main.innerHTML = '<div class="empty">No teacher record</div>'; return; }
+  const myClasses = me.classes || [];
+  const keys = Object.keys(DB.timetable).filter(k => myClasses.includes(k.split('-')[0])).sort();
+  if(!keys.length){ main.innerHTML = '<div class="page-head"><h1>My Timetable</h1></div><div class="empty">No timetable set for your classes.</div>'; return; }
+  main.innerHTML = `
+    <div class="page-head"><h1>My Timetable</h1></div>
+    <div class="toolbar"><select id="ttSelect" onchange="window.__renderMyTT()">${keys.map(k => `<option value="${k}">Class ${k}</option>`).join('')}</select></div>
+    <div class="table-wrap" id="ttArea"></div>`;
+  renderMyTT();
+};
+function renderMyTT(){
+  const k = document.getElementById('ttSelect')?.value;
+  const area = document.getElementById('ttArea');
+  const me = DB.me;
+  if(!area || !k || !DB.timetable[k]) return;
+  const tt = DB.timetable[k];
+  area.innerHTML = `<table>
+    <thead><tr><th style="width:70px">Day</th>${Array.from({length:PERIODS},(_,i)=>`<th>P${i+1}</th>`).join('')}</tr></thead>
+    <tbody>${DAYS.map(d => `<tr><td><b>${d}</b></td>
+      ${Array.from({length:PERIODS},(_,i)=>{
+        const sub = tt[d]?.[i] || '';
+        const mine = sub === me.subject;
+        return `<td style="${mine?'background:#cffafe;font-weight:600;color:#0e7490':''}">${esc(sub)}</td>`;
+      }).join('')}
+    </tr>`).join('')}</tbody></table>
+    <div style="padding:10px 14px;font-size:12px;color:var(--muted);background:#f9fafb;border-top:1px solid var(--border)">🟦 Highlighted = your subject (${esc(me.subject)})</div>`;
+}
+window.__renderMyTT = renderMyTT;
+
+/* HOMEWORK */
+views.homework = async (main) => {
+  const me = DB.me; if(!me){ main.innerHTML = '<div class="empty">No teacher record</div>'; return; }
+  const items = DB.homework.filter(h => h.teacherId === me.id)
+    .sort((a,b) => (b.date + (b.id||'')).localeCompare(a.date + (a.id||'')));
+  main.innerHTML = `
+    <div class="page-head"><h1>Homework</h1><div class="page-actions"><button class="btn primary" onclick="window.__newHomework()">+ Post Homework</button></div></div>
+    ${items.map(h => `
+      <div class="card" style="margin-bottom:12px;border-left:4px solid var(--primary)">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:8px">
+          <div>
+            <b style="font-size:15px">Class ${h.class}${h.section?'-'+h.section:''} · ${esc(h.subject||me.subject)}</b>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">📅 ${h.date}${h.dueDate?` · Due: ${h.dueDate}`:''}</div>
+          </div>
+          <button class="btn sm danger" onclick="window.__delHomework('${h.id}')">Delete</button>
+        </div>
+        <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap">${esc(h.text)}</div>
+      </div>
+    `).join('') || '<div class="empty">No homework posted yet.</div>'}`;
+};
+window.__newHomework = () => {
+  const me = DB.me;
+  const myClasses = me.classes || [];
+  const w = openModal(`<h2>Post Homework</h2>
+    <form id="hwForm">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label>Class *</label><select name="class">${myClasses.map(c => `<option value="${c}">Class ${c}</option>`).join('')}</select></div>
+        <div class="field"><label>Section</label><select name="section"><option value="">All</option>${(DB.config.sections||['A','B']).map(s => `<option value="${s}">${s}</option>`).join('')}</select></div>
+      </div>
+      <div class="field"><label>Subject</label><input name="subject" value="${esc(me.subject)}"></div>
+      <div class="field"><label>Homework *</label><textarea name="text" required placeholder="e.g. Complete exercise 5.2"></textarea></div>
+      <div class="field"><label>Due Date (optional)</label><input name="dueDate" type="date" min="${todayStr()}"></div>
+      <div class="modal-actions"><button type="button" class="btn" onclick="window.__closeModal()">Cancel</button><button type="submit" class="btn primary">Post</button></div>
+    </form>`);
+  w.querySelector('#hwForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    try {
+      await addDoc(collection(db,'homework'), {
+        teacherId: me.id, teacher: me.name,
+        class: d.class, section: d.section || '',
+        subject: d.subject, text: d.text,
+        dueDate: d.dueDate || '', date: todayStr()
+      });
+      closeModal(); await loadAllData(); renderPage(); toast('Posted');
+    } catch(err){ toast('Error: ' + err.message); }
+  };
+};
+window.__delHomework = async (id) => {
+  if(!confirm('Delete this homework?')) return;
+  try { await deleteDoc(doc(db,'homework',id)); await loadAllData(); renderPage(); toast('Deleted'); }
+  catch(e){ toast('Error: ' + e.message); }
+};
+
+/* MY STUDENTS */
+views.students = async (main) => {
+  const me = DB.me; if(!me){ main.innerHTML = '<div class="empty">No teacher record</div>'; return; }
+  const myClasses = me.classes || [];
+  const myStudents = DB.students.filter(s => myClasses.includes(s.class));
+  main.innerHTML = `
+    <div class="page-head"><h1>My Students</h1></div>
+    <div class="toolbar">
+      <input id="stuSearch" placeholder="Search name/ID" oninput="window.__filterMyStudents()" style="min-width:200px">
+      <select id="stuFilterClass" onchange="window.__filterMyStudents()"><option value="">All my classes</option>${myClasses.map(c => `<option>${c}</option>`).join('')}</select>
+      <span id="myStuCount" style="font-size:12px;color:var(--muted);margin-left:auto"></span>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Roll</th><th>Phone</th></tr></thead>
+      <tbody id="myStuBody"></tbody>
+    </table></div>`;
+  filterMyStudents();
+};
+function filterMyStudents(){
+  const me = DB.me;
+  const myClasses = me.classes || [];
+  const q = (document.getElementById('stuSearch')?.value || '').toLowerCase().trim();
+  const c = document.getElementById('stuFilterClass')?.value || '';
+  const rows = DB.students.filter(s => {
+    if(!myClasses.includes(s.class)) return false;
+    if(c && s.class !== c) return false;
+    if(q && !(s.name?.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const tb = document.getElementById('myStuBody'); if(!tb) return;
+  const cnt = document.getElementById('myStuCount'); if(cnt) cnt.textContent = `${rows.length}`;
+  tb.innerHTML = rows.map(s => `<tr><td><code>${s.id}</code></td><td>${esc(s.name)}</td><td>${s.class}-${s.section}</td><td>${esc(s.roll||'-')}</td><td>${esc(s.phone||'-')}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">No students</td></tr>';
+}
+window.__filterMyStudents = filterMyStudents;
+
+/* NOTICES */
+views.notices = async (main) => {
+  const notices = DB.notices.filter(n => n.audience==='all' || n.audience==='teacher');
+  main.innerHTML = `
+    <div class="page-head"><h1>Notices</h1></div>
+    ${notices.slice().reverse().map(n => `
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:8px">
+          <b style="font-size:15px">${esc(n.title)}</b>
+          <span class="badge ${n.audience==='all'?'blue':'yellow'}">${n.audience}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">📅 ${n.date}</div>
+        <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap">${esc(n.body)}</div>
+      </div>
+    `).join('') || '<div class="empty">No notices</div>'}`;
+};
+
+/* PROFILE */
+views.profile = async (main) => {
+  const me = DB.me; if(!me){ main.innerHTML = '<div class="empty">No teacher record</div>'; return; }
+  // Load my user doc to change password
+  const q = query(collection(db,'users'), where('linkedId','==',me.id), where('role','==','teacher'));
+  const snap = await getDocs(q);
+  const myUser = snap.empty ? null : {id: snap.docs[0].id, ...snap.docs[0].data()};
+
+  main.innerHTML = `
+    <div class="page-head"><h1>My Profile</h1></div>
+    <div class="card" style="max-width:560px">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700">${esc(me.name.charAt(0))}</div>
+        <div><div style="font-size:18px;font-weight:700">${esc(me.name)}</div><div style="font-size:12px;color:var(--muted)">Teacher · ${esc(me.id)}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
+        <div><div style="color:var(--muted);margin-bottom:3px">Subject</div><b>${esc(me.subject)}</b></div>
+        <div><div style="color:var(--muted);margin-bottom:3px">Username</div><b>${esc(myUser?.username || '-')}</b></div>
+        <div><div style="color:var(--muted);margin-bottom:3px">Classes</div><b>${(me.classes||[]).join(', ')||'-'}</b></div>
+        <div><div style="color:var(--muted);margin-bottom:3px">Phone</div><b>${esc(me.phone||'-')}</b></div>
+      </div>
+    </div>
+    <div class="card" style="max-width:560px;margin-top:16px">
+      <h3 style="font-size:15px;margin-bottom:14px">Change Password</h3>
+      <form id="pwdForm">
+        <div class="field"><label>Current Password</label><input name="cur" type="password" required></div>
+        <div class="field"><label>New Password</label><input name="newp" type="password" required minlength="4"></div>
+        <div class="field"><label>Confirm New Password</label><input name="conf" type="password" required minlength="4"></div>
+        <button class="btn primary" type="submit">Update Password</button>
+      </form>
+    </div>`;
+  document.getElementById('pwdForm').onsubmit = async (e) => {
+    e.preventDefault();
+    if(!myUser){ toast('User record not found'); return; }
+    const d = Object.fromEntries(new FormData(e.target));
+    if(d.cur !== myUser.password){ toast('Current password incorrect'); return; }
+    if(d.newp !== d.conf){ toast('Passwords do not match'); return; }
+    if(d.newp.length < 4){ toast('Too short'); return; }
+    try { await updateDoc(doc(db,'users',myUser.id), {password: d.newp}); toast('Password updated'); e.target.reset(); }
+    catch(err){ toast('Error: ' + err.message); }
+  };
+};
+
+/* ---------- BOOT ---------- */
+(async () => {
+  try {
+    await loadAllData();
+    renderShell();
+    await renderPage();
+  } catch(e){
+    console.error(e);
+    document.getElementById('app').innerHTML = `<div style="padding:60px 20px;text-align:center">
+      <h2 style="color:var(--danger)">Cannot load data</h2>
+      <p style="color:var(--muted);margin:12px 0">Check Firestore rules or contact Principal.</p>
+      <pre style="text-align:left;background:#f9fafb;padding:12px;border-radius:8px;display:inline-block;font-size:12px;max-width:90%">${esc(e.message)}</pre>
+      <div style="margin-top:20px"><a href="login.html" class="btn">Back to Login</a></div>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student — School Management</title>
+<style>
+  :root{--primary:#059669;--primary-dark:#047857;--primary-light:#d1fae5;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--danger:#dc2626;--success:#16a34a;--warning:#f59e0b;--bg:#f4f6fa;--card:#fff;--sidebar:#064e3b;--sidebar-hover:#065f46;}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  body{background:var(--bg);color:var(--text);}
+  .app{display:flex;min-height:100vh;}
+  .sidebar{width:240px;background:var(--sidebar);color:#fff;display:flex;flex-direction:column;flex-shrink:0;padding:16px;}
+  .sidebar-header{margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .sidebar-header .brand{font-size:20px;font-weight:700;}
+  .sidebar-header .school-name{font-size:11px;color:#94a3b8;margin-top:4px;}
+  .sidebar nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;}
+  .nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;color:#cbd5e1;text-align:left;border-radius:7px;cursor:pointer;font-size:13.5px;font-weight:500;position:relative;}
+  .nav-btn:hover{background:var(--sidebar-hover);color:#fff;}
+  .nav-btn.active{background:var(--primary);color:#fff;}
+  .nav-btn .ico{font-size:16px;}
+  .nav-btn .badge-dot{background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:auto;}
+  .sidebar-footer{padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);margin-top:14px;}
+  .user-info{font-size:13px;margin-bottom:10px;}
+  .user-info .name{font-weight:600;}
+  .user-info .role{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;}
+  .btn-logout{width:100%;padding:8px;background:rgba(220,38,38,0.9);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+  .btn-logout:hover{background:var(--danger);}
+  .main{flex:1;padding:24px 28px;overflow-x:auto;}
+  .page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+  .page-head h1{font-size:22px;font-weight:700;}
+  .page-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+  .card-label{font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .card-value{font-size:26px;font-weight:700;}
+  .btn{padding:9px 16px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);}
+  .btn:hover{background:#f9fafb;}
+  .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-dark);}
+  .btn.danger{background:var(--danger);color:#fff;border-color:var(--danger);}
+  .btn.sm{padding:5px 10px;font-size:12px;}
+  .toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;}
+  .table-wrap{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--border);}
+  th{background:#f9fafb;font-weight:600;font-size:12px;color:#374151;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#f9fafb;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;}
+  .field input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;}
+  .field input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light);}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  .modal{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;}
+  .modal h2{font-size:18px;margin-bottom:18px;font-weight:700;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+  .toast{position:fixed;bottom:24px;right:24px;background:#1f2937;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:2000;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+  .badge.green{background:#dcfce7;color:#166534;}
+  .badge.red{background:#fee2e2;color:#991b1b;}
+  .badge.blue{background:#dbeafe;color:#1e40af;}
+  .badge.gray{background:#e5e7eb;color:#374151;}
+  .badge.yellow{background:#fef3c7;color:#92400e;}
+  .empty{padding:40px 20px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px;}
+  .loading{padding:40px 20px;text-align:center;color:var(--muted);}
+  code{background:#f3f4f6;padding:1px 6px;border-radius:4px;font-family:"Courier New",monospace;}
+  .idcard-wrap{display:flex;justify-content:center;padding:10px 0;}
+  .idcard{background:linear-gradient(135deg,#064e3b 0%,#047857 60%,#059669 100%);color:#fff;padding:26px;border-radius:18px;max-width:360px;width:100%;box-shadow:0 15px 40px rgba(5,150,105,0.35);position:relative;overflow:hidden;}
+  .idcard .ic-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px dashed rgba(255,255,255,0.3);position:relative;z-index:1;}
+  .idcard .avatar{width:64px;height:64px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;}
+  .idcard .ic-school{font-size:11px;opacity:0.85;margin-top:2px;}
+  .idcard .ic-name{font-size:16px;font-weight:700;margin-bottom:2px;}
+  .idcard .ic-rows{position:relative;z-index:1;}
+  .idcard .ic-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;}
+  .idcard .ic-row span:first-child{opacity:0.75;}
+  .idcard .ic-footer{margin-top:16px;padding-top:12px;border-top:1px dashed rgba(255,255,255,0.3);font-size:10px;text-align:center;opacity:0.7;position:relative;z-index:1;}
+  .hw-card{border-left:4px solid var(--primary);}
+  @media (max-width:768px){.app{flex-direction:column;}.sidebar{width:100%;flex-direction:row;padding:10px;overflow-x:auto;gap:6px;align-items:center;}.sidebar-header,.sidebar-footer{display:none;}.sidebar nav{flex-direction:row;gap:4px;overflow-x:auto;flex:1;}.nav-btn{padding:8px 12px;white-space:nowrap;font-size:12px;}.nav-btn .badge-dot{display:none;}.main{padding:16px;}.page-head h1{font-size:18px;}.cards{grid-template-columns:repeat(2,1fr);gap:10px;}.card-value{font-size:20px;}}
+  @media print{.sidebar,.nav-btn,.page-actions,.toolbar,.btn{display:none!important;}.main{padding:0;}.app{display:block;}.idcard{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+/* ============================================================
+   MODULE 4 — STUDENT (Firestore-connected)
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import { getFirestore, collection, doc, getDoc, getDocs, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBAL2TNi_HTd2wA94JuEhx-fUCjVVXjxDk",
+  authDomain: "school-72bbf.firebaseapp.com",
+  projectId: "school-72bbf",
+  storageBucket: "school-72bbf.firebasestorage.app",
+  messagingSenderId: "1010824866684",
+  appId: "1:1010824866684:web:55b60cb0f1240f2bf592f9",
+  measurementId: "G-XZCY7VJ2ND"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ---------- SESSION GUARD ---------- */
+const SESSION_KEY = 'sms_session';
+let SESSION = null;
+try { SESSION = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e){}
+if(!SESSION || SESSION.role !== 'student' || Date.now() - (SESSION.savedAt || 0) > 8*60*60*1000){
+  localStorage.removeItem(SESSION_KEY);
+  window.location.replace('login.html');
+  throw new Error('Unauthorized');
+}
+
+/* ---------- HELPERS ---------- */
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+const PERIODS = 6;
+const todayStr = () => new Date().toISOString().slice(0,10);
+const fmtMoney = n => '₹' + (n||0).toLocaleString('en-IN');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const el=document.createElement('div');el.className='toast';el.textContent=m;document.body.appendChild(el);setTimeout(()=>el.remove(),2400);}
+function openModal(html){const w=document.createElement('div');w.className='modal-bg';w.innerHTML=`<div class="modal">${html}</div>`;w.onclick=e=>{if(e.target===w)w.remove();};document.body.appendChild(w);return w;}
+function closeModal(){document.querySelector('.modal-bg')?.remove();}
+function logout(){localStorage.removeItem(SESSION_KEY);window.location.href='login.html';}
+const loading = t => `<div class="loading">⏳ ${t||'Loading'}…</div>`;
+
+/* ---------- DATA CACHE ---------- */
+const DB = {
+  settings:{}, me:null, attendance:[], exams:[], marks:[],
+  payments:[], feeStructure:{}, homework:[], notices:[], timetable:{},
+  transport:[], myTransport:null, myUser:null
+};
+
+async function loadAllData(){
+  const [setSnap, usersSnap] = await Promise.all([
+    getDoc(doc(db,'settings','main')),
+    getDocs(collection(db,'users'))
+  ]);
+  DB.settings = setSnap.exists() ? setSnap.data() : {};
+
+  const users = usersSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.myUser = users.find(u => u.username === SESSION.username && u.role === 'student') || null;
+  const studentId = SESSION.linkedId || DB.myUser?.linkedId || '';
+
+  if(studentId){
+    const sSnap = await getDoc(doc(db,'students',studentId));
+    DB.me = sSnap.exists() ? {id: sSnap.id, ...sSnap.data()} : null;
+  }
+  if(!DB.me) return;
+
+  // Fetch relevant data (all — small DB)
+  const [attSnap, exSnap, mkSnap, paySnap, fsSnap, hwSnap, ntSnap, ttSnap, trSnap, stSnap] = await Promise.all([
+    getDocs(collection(db,'attendance')),
+    getDocs(collection(db,'exams')),
+    getDocs(collection(db,'marks')),
+    getDocs(collection(db,'payments')),
+    getDocs(collection(db,'feeStructure')),
+    getDocs(collection(db,'homework')),
+    getDocs(collection(db,'notices')),
+    getDocs(collection(db,'timetable')),
+    getDocs(collection(db,'transport')),
+    getDoc(doc(db,'studentTransport',studentId))
+  ]);
+  DB.attendance = attSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.exams = exSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.marks = mkSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.payments = paySnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.feeStructure = {}; fsSnap.docs.forEach(d => DB.feeStructure[d.id] = d.data());
+  DB.homework = hwSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.notices = ntSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  DB.timetable = {}; ttSnap.docs.forEach(d => DB.timetable[d.id] = d.data());
+  DB.transport = trSnap.docs.map(d => ({id:d.id, ...d.data()}));
+  const routeId = stSnap.exists() ? stSnap.data().routeId : null;
+  DB.myTransport = routeId ? DB.transport.find(r => r.id === routeId) : null;
+}
+
+/* ---------- HOMEWORK READ STATE (localStorage per-student) ---------- */
+function hwReadKey(){ return 'sms_hw_read_' + (DB.me?.id || ''); }
+function getReadHwIds(){ try { return JSON.parse(localStorage.getItem(hwReadKey()) || '[]'); } catch(e){ return []; } }
+function setReadHwIds(ids){ localStorage.setItem(hwReadKey(), JSON.stringify(ids)); }
+
+function getMyHomework(){
+  if(!DB.me) return [];
+  return DB.homework.filter(h =>
+    h.class === DB.me.class && (!h.section || h.section === DB.me.section)
+  ).sort((a,b) => (b.date + (b.id||'')).localeCompare(a.date + (a.id||'')));
+}
+function getPendingHwCount(){
+  const read = getReadHwIds();
+  return getMyHomework().filter(h => !read.includes(h.id)).length;
+}
+
+/* ---------- ATTENDANCE STATS ---------- */
+function myAttendanceStats(){
+  const all = DB.attendance.filter(a => a.records && a.records[DB.me.id] !== undefined);
+  const present = all.filter(a => a.records[DB.me.id] === 'P').length;
+  return { total: all.length, present, absent: all.length - present, pct: all.length ? Math.round(present/all.length*100) : 0, records: all.sort((a,b) => b.date.localeCompare(a.date)) };
+}
+function myFeeStats(){
+  const fs = DB.feeStructure[DB.me.class] || {};
+  const total = Object.values(fs).reduce((a,b) => a+b, 0);
+  const paid = DB.payments.filter(p => p.studentId === DB.me.id).reduce((a,b) => a + (b.amount||0), 0);
+  return { total, paid, pending: total - paid, items: fs, payments: DB.payments.filter(p => p.studentId === DB.me.id).sort((a,b) => b.date.localeCompare(a.date)) };
+}
+
+/* ---------- APP SHELL ---------- */
+let currentPage = 'dashboard';
+const NAV = [
+  ['dashboard','📊','Dashboard'],['homework','📚','Homework'],['idcard','🪪','My ID Card'],
+  ['attendance','✅','My Attendance'],['timetable','🗓️','Timetable'],['results','📝','My Results'],
+  ['fees','💰','My Fees'],['transport','🚌','My Transport'],['notices','📢','Notices'],['profile','👤','My Profile']
+];
+
+function renderShell(){
+  const name = DB.me?.name || SESSION.name || 'Student';
+  const pendingHw = getPendingHwCount();
+  document.getElementById('app').innerHTML = `
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand">🏫 SMS</div>
+          <div class="school-name">${esc(DB.settings.schoolName || 'School')}</div>
+        </div>
+        <nav>${NAV.map(([id,ico,label]) => `
+          <button class="nav-btn ${currentPage===id?'active':''}" data-page="${id}">
+            <span class="ico">${ico}</span><span>${label}</span>
+            ${id==='homework' && pendingHw>0 ? `<span class="badge-dot">${pendingHw}</span>` : ''}
+          </button>`).join('')}
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-info"><div class="name">${esc(name)}</div><div class="role">Student</div></div>
+          <button class="btn-logout" onclick="window.__logout()">Sign Out</button>
+        </div>
+      </aside>
+      <main class="main" id="main"></main>
+    </div>`;
+  document.querySelectorAll('.nav-btn').forEach(b => b.onclick = () => { currentPage = b.dataset.page; renderPage(); });
+}
+window.__logout = logout;
+window.__closeModal = closeModal;
+window.__go = p => { currentPage = p; renderPage(); };
+
+async function renderPage(){
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === currentPage));
+  const main = document.getElementById('main');
+  main.innerHTML = loading();
+  try { await views[currentPage](main); }
+  catch(e){ console.error(e); main.innerHTML = `<div class="empty">Error: ${esc(e.message)}</div>`; }
+}
+
+/* ---------- VIEWS ---------- */
+const views = {};
+
+/* DASHBOARD */
+views.dashboard = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Student record not found. Contact Principal.</div>'; return; }
+  const att = myAttendanceStats();
+  const fee = myFeeStats();
+  const hw = getMyHomework();
+  const pendingHw = getPendingHwCount();
+  const myNotices = DB.notices.filter(n => n.audience==='all' || n.audience==='student');
+  const published = DB.exams.filter(e => e.published);
+
+  main.innerHTML = `
+    <div class="page-head"><h1>Welcome, ${esc(me.name.split(' ')[0])} 👋</h1></div>
+    <div class="cards">
+      <div class="card"><div class="card-label">Class</div><div class="card-value" style="font-size:18px">${me.class}-${me.section}</div></div>
+      <div class="card"><div class="card-label">Roll No</div><div class="card-value" style="font-size:18px">${esc(me.roll||'-')}</div></div>
+      <div class="card"><div class="card-label">Attendance</div><div class="card-value" style="color:${att.pct>=75?'var(--success)':att.pct>=50?'var(--warning)':'var(--danger)'}">${att.pct}%</div></div>
+      <div class="card"><div class="card-label">Pending Fees</div><div class="card-value" style="color:${fee.pending>0?'var(--danger)':'var(--success)'};font-size:20px">${fmtMoney(fee.pending)}</div></div>
+      <div class="card"><div class="card-label">Pending Homework</div><div class="card-value">${pendingHw}</div></div>
+      <div class="card"><div class="card-label">Results Published</div><div class="card-value">${published.length}</div></div>
+    </div>
+    ${pendingHw > 0 ? `
+      <div class="card" style="border-left:4px solid var(--warning);margin-bottom:16px;background:#fffbeb">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <b style="color:#92400e">📚 You have ${pendingHw} new homework${pendingHw>1?'s':''}</b>
+            <div style="font-size:12px;color:#78350f;margin-top:4px">Check what your teachers assigned.</div>
+          </div>
+          <button class="btn primary" onclick="window.__go('homework')">View Homework</button>
+        </div>
+      </div>
+    ` : ''}
+    <h2 style="font-size:16px;margin-bottom:12px">Recent Homework</h2>
+    ${hw.slice(0,3).map(h => `
+      <div class="card hw-card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:6px">
+          <b style="font-size:14px">${esc(h.subject||'Homework')}</b>
+          <span class="badge blue">Class ${h.class}${h.section?'-'+h.section:''}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">👨‍🏫 ${esc(h.teacher||'Teacher')} · 📅 ${h.date}${h.dueDate?` · Due: ${h.dueDate}`:''}</div>
+        <div style="font-size:13px;line-height:1.5">${esc(h.text)}</div>
+      </div>
+    `).join('') || '<div class="empty">No homework yet 🎉</div>'}
+    <h2 style="font-size:16px;margin:22px 0 12px">Recent Notices</h2>
+    ${myNotices.slice(-3).reverse().map(n => `
+      <div class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b>${esc(n.title)}</b><span class="badge ${n.audience==='all'?'blue':'green'}">${n.audience}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">${n.date}</div>
+        <div style="font-size:13px">${esc(n.body)}</div>
+      </div>
+    `).join('') || '<div class="empty">No notices yet</div>'}`;
+};
+
+/* HOMEWORK */
+views.homework = async (main) => {
+  if(!DB.me){ main.innerHTML = '<div class="empty">Student record not found.</div>'; return; }
+  const list = getMyHomework();
+  const readIds = getReadHwIds();
+
+  main.innerHTML = `
+    <div class="page-head"><h1>My Homework</h1>
+      ${list.length ? '<div class="page-actions"><button class="btn" onclick="window.__markAllRead()">✓ Mark All Read</button></div>' : ''}
+    </div>
+    ${list.length === 0 ? `
+      <div class="empty">
+        <div style="font-size:40px;margin-bottom:12px">🎉</div>
+        <div style="font-weight:600;margin-bottom:4px">No homework assigned yet</div>
+        <div style="font-size:13px">Your teachers haven't posted any homework.</div>
+      </div>
+    ` : list.map(h => {
+      const isNew = !readIds.includes(h.id);
+      const overdue = h.dueDate && h.dueDate < todayStr();
+      return `
+        <div class="card hw-card" style="margin-bottom:12px;${isNew?'background:#f0fdf4;border-left-color:var(--warning)':''}">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:8px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <b style="font-size:15px">${esc(h.subject||'Homework')}</b>
+                <span class="badge blue">Class ${h.class}${h.section?'-'+h.section:''}</span>
+                ${isNew ? '<span class="badge yellow">NEW</span>' : ''}
+                ${overdue ? '<span class="badge red">OVERDUE</span>' : ''}
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px">
+                👨‍🏫 <b>${esc(h.teacher||'Teacher')}</b> · 📅 ${h.date}
+                ${h.dueDate ? ` · ⏰ Due: <b style="color:${overdue?'var(--danger)':'var(--text)'}">${h.dueDate}</b>` : ''}
+              </div>
+            </div>
+          </div>
+          <div style="font-size:14px;line-height:1.6;white-space:pre-wrap;padding:12px;background:#f9fafb;border-radius:8px">${esc(h.text)}</div>
+        </div>`;
+    }).join('')}`;
+
+  // Auto-mark visible as read after a moment
+  setTimeout(() => {
+    if(!list.length) return;
+    const merged = Array.from(new Set([...readIds, ...list.map(h => h.id)]));
+    setReadHwIds(merged);
+    // Refresh sidebar badge
+    const badge = document.querySelector('.nav-btn[data-page="homework"] .badge-dot');
+    if(badge) badge.remove();
+  }, 2000);
+};
+
+window.__markAllRead = () => {
+  const list = getMyHomework();
+  setReadHwIds(list.map(h => h.id));
+  toast('All homework marked as read');
+  renderShell();
+  renderPage();
+};
+
+/* ID CARD */
+views.idcard = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Student record not found.</div>'; return; }
+  main.innerHTML = `
+    <div class="page-head"><h1>My ID Card</h1>
+      <div class="page-actions"><button class="btn primary" onclick="window.print()">🖨️ Print Card</button></div>
+    </div>
+    <div class="idcard-wrap">
+      <div class="idcard">
+        <div class="ic-head">
+          <div class="avatar">${esc(me.name.charAt(0).toUpperCase())}</div>
+          <div>
+            <div class="ic-name">${esc(me.name)}</div>
+            <div class="ic-school">${esc(DB.settings.schoolName||'School')}</div>
+          </div>
+        </div>
+        <div class="ic-rows">
+          <div class="ic-row"><span>Student ID</span><b>${me.id}</b></div>
+          <div class="ic-row"><span>Class</span><b>${me.class} - ${me.section}</b></div>
+          <div class="ic-row"><span>Roll No</span><b>${esc(me.roll||'-')}</b></div>
+          <div class="ic-row"><span>DOB</span><b>${esc(me.dob||'-')}</b></div>
+          <div class="ic-row"><span>Father</span><b>${esc(me.fatherName||'-')}</b></div>
+          <div class="ic-row"><span>Phone</span><b>${esc(me.phone||'-')}</b></div>
+          <div class="ic-row"><span>Session</span><b>${esc(DB.settings.academicYear||'')}</b></div>
+        </div>
+        <div class="ic-footer">${esc(DB.settings.address||'')}</div>
+      </div>
+    </div>`;
+};
+
+/* ATTENDANCE */
+views.attendance = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Student record not found.</div>'; return; }
+  const stats = myAttendanceStats();
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthAtt = stats.records.filter(a => a.date.startsWith(ym));
+  const monthPresent = monthAtt.filter(a => a.records[me.id] === 'P').length;
+  const monthPct = monthAtt.length ? Math.round(monthPresent/monthAtt.length*100) : 0;
+
+  main.innerHTML = `
+    <div class="page-head"><h1>My Attendance</h1></div>
+    <div class="cards">
+      <div class="card"><div class="card-label">Overall</div><div class="card-value" style="color:${stats.pct>=75?'var(--success)':stats.pct>=50?'var(--warning)':'var(--danger)'}">${stats.pct}%</div></div>
+      <div class="card"><div class="card-label">This Month</div><div class="card-value" style="color:${monthPct>=75?'var(--success)':monthPct>=50?'var(--warning)':'var(--danger)'}">${monthPct}%</div></div>
+      <div class="card"><div class="card-label">Present</div><div class="card-value" style="color:var(--success)">${stats.present}</div></div>
+      <div class="card"><div class="card-label">Absent</div><div class="card-value" style="color:var(--danger)">${stats.absent}</div></div>
+    </div>
+    ${stats.records.length === 0 ? '<div class="empty">No attendance records yet.</div>' : `
+      <h2 style="font-size:16px;margin-bottom:12px">Recent Records</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Class</th><th>Status</th></tr></thead>
+        <tbody>${stats.records.slice(0,30).map(a => `
+          <tr><td>${a.date}</td><td>${a.class}-${a.section}</td>
+            <td>${a.records[me.id]==='P'?'<span class="badge green">Present</span>':'<span class="badge red">Absent</span>'}</td></tr>
+        `).join('')}</tbody>
+      </table></div>`}`;
+};
+
+/* TIMETABLE */
+views.timetable = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Student record not found.</div>'; return; }
+  const key = `${me.class}-${me.section}`;
+  const tt = DB.timetable[key];
+  if(!tt){
+    main.innerHTML = `
+      <div class="page-head"><h1>My Timetable</h1></div>
+      <div class="empty">
+        <div style="font-size:40px;margin-bottom:12px">🗓️</div>
+        <div style="font-weight:600;margin-bottom:4px">No timetable set yet</div>
+        <div style="font-size:13px">Ask your Principal to create timetable for Class ${key}.</div>
+      </div>`;
+    return;
+  }
+  const dayNames = {Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday'};
+  const todayKey = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+  main.innerHTML = `
+    <div class="page-head"><h1>My Timetable — Class ${key}</h1></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th style="width:100px">Day</th>${Array.from({length:PERIODS},(_,i)=>`<th>P${i+1}</th>`).join('')}</tr></thead>
+      <tbody>${DAYS.map(d => {
+        const isToday = d === todayKey;
+        return `<tr style="${isToday?'background:#f0fdf4':''}">
+          <td><b>${dayNames[d]||d}${isToday?' <span class="badge green" style="font-size:9px">TODAY</span>':''}</b></td>
+          ${Array.from({length:PERIODS},(_,i)=>{
+            const sub = tt[d]?.[i]||'';
+            return `<td style="${sub?'':'color:var(--muted)'}">${esc(sub)||'—'}</td>`;
+          }).join('')}
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+};
+
+/* RESULTS */
+views.results = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Student record not found.</div>'; return; }
+  const published = DB.exams.filter(e => e.published);
+  if(!published.length){
+    main.innerHTML = `
+      <div class="page-head"><h1>My Results</h1></div>
+      <div class="empty">
+        <div style="font-size:40px;margin-bottom:12px">📝</div>
+        <div style="font-weight:600;margin-bottom:4px">No results published yet</div>
+        <div style="font-size:13px">Results will appear once the Principal publishes them.</div>
+      </div>`;
+    return;
+  }
+  main.innerHTML = `
+    <div class="page-head"><h1>My Results</h1></div>
+    ${published.slice().reverse().map(e => {
+      const marks = DB.marks.filter(m => m.examId === e.id && m.studentId === me.id);
+      if(!marks.length){
+        return `<div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <b style="font-size:16px">${esc(e.name)}</b><span class="badge gray">Max: ${e.max}</span>
+          </div>
+          <div style="color:var(--muted);font-size:13px">Marks not yet entered for your subjects.</div>
+        </div>`;
+      }
+      const totalMax = marks.length * e.max;
+      const obtained = marks.reduce((a,m) => a + m.marks, 0);
+      const pct = totalMax ? Math.round(obtained/totalMax*100) : 0;
+      const grade = pct>=90?'A+':pct>=75?'A':pct>=60?'B':pct>=40?'C':pct>=33?'D':'F';
+      const pass = pct >= 33;
+      return `<div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div><b style="font-size:16px">${esc(e.name)}</b>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">Max per subject: ${e.max}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge ${pass?'green':'red'}">${pass?'PASS':'FAIL'}</span>
+            <span class="badge blue">Grade ${grade}</span>
+          </div>
+        </div>
+        <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border)">
+          <table>
+            <thead><tr><th>Subject</th><th>Marks</th><th>Max</th><th>%</th></tr></thead>
+            <tbody>${marks.map(m => {
+              const p = Math.round(m.marks/e.max*100);
+              return `<tr><td>${esc(m.subject)}</td>
+                <td><b style="color:${p>=33?'var(--success)':'var(--danger)'}">${m.marks}</b></td>
+                <td>${e.max}</td><td>${p}%</td></tr>`;
+            }).join('')}
+            <tr style="background:#f9fafb;font-weight:700">
+              <td>Total</td><td>${obtained}</td><td>${totalMax}</td><td>${pct}%</td>
+            </tr></tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join('')}`;
+};
+
+/* FEES */
+views.fees = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Student record not found.</div>'; return; }
+  const stats = myFeeStats();
+  main.innerHTML = `
+    <div class="page-head"><h1>My Fees</h1></div>
+    <div class="cards">
+      <div class="card"><div class="card-label">Total Fee</div><div class="card-value" style="font-size:20px">${fmtMoney(stats.total)}</div></div>
+      <div class="card"><div class="card-label">Paid</div><div class="card-value" style="color:var(--success);font-size:20px">${fmtMoney(stats.paid)}</div></div>
+      <div class="card"><div class="card-label">Pending</div><div class="card-value" style="color:${stats.pending>0?'var(--danger)':'var(--success)'};font-size:20px">${fmtMoney(stats.pending)}</div></div>
+      <div class="card"><div class="card-label">Status</div><div class="card-value" style="font-size:18px;color:${stats.pending>0?'var(--danger)':'var(--success)'}">${stats.pending>0?'Due':'Paid ✓'}</div></div>
+    </div>
+    <h2 style="font-size:16px;margin-bottom:12px">Fee Breakdown</h2>
+    <div class="table-wrap" style="margin-bottom:20px">
+      <table>
+        <thead><tr><th>Item</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody>
+          ${Object.entries(stats.items).map(([k,v]) => `<tr><td>${esc(k)}</td><td style="text-align:right">${fmtMoney(v)}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">No fee structure set</td></tr>'}
+          ${Object.keys(stats.items).length ? `<tr style="background:#f9fafb;font-weight:700"><td>Total</td><td style="text-align:right">${fmtMoney(stats.total)}</td></tr>` : ''}
+        </tbody>
+      </table>
+    </div>
+    <h2 style="font-size:16px;margin-bottom:12px">Payment History</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+        <tbody>
+          ${stats.payments.length ? stats.payments.map(p => `
+            <tr><td><code>${esc(p.receiptNo)}</code></td><td>${p.date}</td><td>${esc(p.method)}</td>
+              <td style="text-align:right;font-weight:600;color:var(--success)">${fmtMoney(p.amount)}</td>
+              <td><button class="btn sm" onclick="window.__viewReceipt('${esc(p.receiptNo)}')">View</button></td></tr>
+          `).join('') : '<tr><td colspan="5" class="empty">No payments yet</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
+};
+
+window.__viewReceipt = (receiptNo) => {
+  const me = DB.me;
+  const p = DB.payments.find(x => x.receiptNo === receiptNo && x.studentId === me.id);
+  if(!p){ toast('Not found'); return; }
+  openModal(`
+    <h2>Payment Receipt</h2>
+    <div style="border:2px dashed var(--border);padding:20px;border-radius:10px;margin-bottom:16px">
+      <div style="text-align:center;margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--border)">
+        <div style="font-size:16px;font-weight:700">${esc(DB.settings.schoolName||'School')}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(DB.settings.address||'')}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-bottom:14px">
+        <div><span style="color:var(--muted)">Receipt:</span><br><b>${p.receiptNo}</b></div>
+        <div><span style="color:var(--muted)">Date:</span><br><b>${p.date}</b></div>
+        <div><span style="color:var(--muted)">Student:</span><br><b>${esc(me.name)}</b></div>
+        <div><span style="color:var(--muted)">Class:</span><br><b>${me.class}-${me.section}</b></div>
+        <div><span style="color:var(--muted)">Method:</span><br><b>${esc(p.method)}</b></div>
+        <div><span style="color:var(--muted)">ID:</span><br><b>${me.id}</b></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:14px;border-top:2px solid var(--text);font-size:16px">
+        <span>Amount Paid</span><b style="color:var(--success)">${fmtMoney(p.amount)}</b>
+      </div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="window.__closeModal()">Close</button><button class="btn primary" onclick="window.print()">🖨️ Print</button></div>`);
+};
+
+/* TRANSPORT */
+views.transport = async (main) => {
+  const route = DB.myTransport;
+  main.innerHTML = `
+    <div class="page-head"><h1>My Transport</h1></div>
+    ${!route ? `
+      <div class="empty">
+        <div style="font-size:40px;margin-bottom:12px">🚌</div>
+        <div style="font-weight:600;margin-bottom:4px">No transport assigned</div>
+        <div style="font-size:13px">You are not on any bus route. Contact the Principal if you need transport.</div>
+      </div>
+    ` : `
+      <div class="card" style="max-width:540px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+          <div><b style="font-size:17px">${esc(route.name)}</b>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">School Transport</div>
+          </div>
+          <span class="badge green">Active</span>
+        </div>
+        <div style="display:grid;gap:12px;font-size:13px">
+          <div><div style="color:var(--muted);font-size:11px;margin-bottom:3px">Stops</div><div>${esc(route.stops||'-')}</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><div style="color:var(--muted);font-size:11px;margin-bottom:3px">Vehicle</div><b>${esc(route.vehicle||'-')}</b></div>
+            <div><div style="color:var(--muted);font-size:11px;margin-bottom:3px">Driver</div><b>${esc(route.driver||'-')}</b></div>
+          </div>
+        </div>
+      </div>
+    `}`;
+};
+
+/* NOTICES */
+views.notices = async (main) => {
+  const notices = DB.notices.filter(n => n.audience==='all' || n.audience==='student');
+  main.innerHTML = `
+    <div class="page-head"><h1>Notices</h1></div>
+    ${notices.length ? notices.slice().reverse().map(n => `
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:8px">
+          <b style="font-size:15px">${esc(n.title)}</b>
+          <span class="badge ${n.audience==='all'?'blue':'green'}">${n.audience}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">📅 ${n.date}</div>
+        <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap">${esc(n.body)}</div>
+      </div>
+    `).join('') : '<div class="empty">No notices yet</div>'}`;
+};
+
+/* PROFILE */
+views.profile = async (main) => {
+  const me = DB.me;
+  if(!me){ main.innerHTML = '<div class="empty">Student record not found.</div>'; return; }
+  main.innerHTML = `
+    <div class="page-head"><h1>My Profile</h1></div>
+    <div class="card" style="max-width:600px">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700">${esc(me.name.charAt(0).toUpperCase())}</div>
+        <div><div style="font-size:18px;font-weight:700">${esc(me.name)}</div>
+          <div style="font-size:12px;color:var(--muted)">Student · ${me.id} · Class ${me.class}-${me.section}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
+        <div><div style="color:var(--muted);margin-bottom:3px">Roll No</div><b>${esc(me.roll||'-')}</b></div>
+        <div><div style="color:var(--muted);margin-bottom:3px">DOB</div><b>${esc(me.dob||'-')}</b></div>
+        <div><div style="color:var(--muted);margin-bottom:3px">Father</div><b>${esc(me.fatherName||'-')}</b></div>
+        <div><div style="color:var(--muted);margin-bottom:3px">Phone</div><b>${esc(me.phone||'-')}</b></div>
+        <div style="grid-column:span 2"><div style="color:var(--muted);margin-bottom:3px">Address</div><b>${esc(me.address||'-')}</b></div>
+      </div>
+    </div>
+    <div class="card" style="max-width:600px;margin-top:16px">
+      <h3 style="font-size:15px;margin-bottom:14px">Change Password</h3>
+      <form id="pwdForm">
+        <div class="field"><label>Current Password</label><input name="cur" type="password" required></div>
+        <div class="field"><label>New Password</label><input name="newp" type="password" required minlength="4"></div>
+        <div class="field"><label>Confirm New Password</label><input name="conf" type="password" required minlength="4"></div>
+        <button class="btn primary" type="submit">Update Password</button>
+      </form>
+    </div>`;
+  document.getElementById('pwdForm').onsubmit = async (e) => {
+    e.preventDefault();
+    if(!DB.myUser){ toast('User record not found'); return; }
+    const d = Object.fromEntries(new FormData(e.target));
+    if(d.cur !== DB.myUser.password){ toast('Current password incorrect'); return; }
+    if(d.newp !== d.conf){ toast('Passwords do not match'); return; }
+    if(d.newp.length < 4){ toast('Too short'); return; }
+    try { await updateDoc(doc(db,'users',DB.myUser.id), {password: d.newp}); toast('Password updated'); e.target.reset(); }
+    catch(err){ toast('Error: ' + err.message); }
+  };
+};
+
+/* ---------- BOOT ---------- */
+(async () => {
+  try {
+    await loadAllData();
+    renderShell();
+    await renderPage();
+  } catch(e){
+    console.error(e);
+    document.getElementById('app').innerHTML = `<div style="padding:60px 20px;text-align:center">
+      <h2 style="color:var(--danger)">Cannot load data</h2>
+      <p style="color:var(--muted);margin:12px 0">Check Firestore rules or contact Principal.</p>
+      <pre style="text-align:left;background:#f9fafb;padding:12px;border-radius:8px;display:inline-block;font-size:12px;max-width:90%">${esc(e.message)}</pre>
+      <div style="margin-top:20px"><a href="login.html" class="btn">Back to Login</a></div>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>
